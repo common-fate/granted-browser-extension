@@ -1,0 +1,1 @@
+# granted-browser-extension

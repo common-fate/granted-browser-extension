@@ -46,7 +46,7 @@ export default defineContentScript({
     const userCodeElement = document.getElementById("user-code");
     if (userCodeElement) {
       const userCode = userCodeElement.textContent;
-      console.log("got user code: " + userCode);
+      console.log("Granted: got user code: " + userCode);
 
       if (userCode) {
         try {
@@ -82,7 +82,7 @@ export default defineContentScript({
             const btn = document.getElementById("cli_verification_btn");
 
             if (btn != null) {
-              console.log("disabling button");
+              console.log("Granted: disabling button");
               btn.setAttribute("disabled", "true");
               btn.style.cursor = "not-allowed";
               btn.classList.remove("awsui-button-variant-primary");

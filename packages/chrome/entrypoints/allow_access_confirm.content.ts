@@ -3,7 +3,15 @@ import { sendMessage } from "./utils/messaging";
 export default defineContentScript({
   matches: ["https://*.awsapps.com/start/*"],
   async main() {
-    console.log("running allow_access_confirm...");
+    console.log("Granted: running allow_access_confirm...");
+
+    const hashParams = new URLSearchParams(window.location.hash.slice(2));
+    const clientId = hashParams.get("clientId");
+
+    if (!clientId) {
+      console.log("Granted: clientID parameter is missing in the URL hash.");
+      return;
+    }
 
     // Create and insert the banner
     const banner = document.createElement("div");
@@ -28,14 +36,25 @@ export default defineContentScript({
         const allowAccessButton = document.querySelector(
           '[data-testid="allow-access-button"]',
         ) as HTMLElement;
-        console.log("found allow access button", allowAccessButton);
         if (allowAccessButton) {
+          console.log("Granted: found allow access button", allowAccessButton);
           allowAccessButton.click();
-          setTimeout(() => {
-            sendMessage("closeTab", undefined);
-          }, 1000);
+
+          let closeAttempts = 0;
+          const maxCloseAttempts = 10;
+          const closeMessageCheckInterval = setInterval(() => {
+            if (
+              document.body.textContent?.includes("You can close this window.")
+            ) {
+              clearInterval(closeMessageCheckInterval);
+              sendMessage("closeTab", undefined);
+            } else if (closeAttempts >= maxCloseAttempts) {
+              clearInterval(closeMessageCheckInterval);
+            }
+            closeAttempts++;
+          }, 200);
           clearInterval(intervalId);
-        } else if (attempts >= 10) {
+        } else if (attempts >= 30) {
           clearInterval(intervalId);
         }
         attempts++;

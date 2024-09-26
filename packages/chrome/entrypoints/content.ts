@@ -50,17 +50,14 @@ export default defineContentScript({
 
       if (userCode) {
         try {
-          const response = await fetch("http://localhost:55145/user-code", {
-            method: "GET",
-          });
-          const data = await response.text();
-          console.log("Server response:", data);
+          const validCodes = await sendMessage("getValidUserCodes", undefined);
+          console.log("valid user codes:", validCodes);
 
-          if (data == userCode) {
+          if (validCodes.includes(userCode)) {
             await sendMessage("setUserCode", userCode);
             document.getElementById("cli_verification_btn")?.click();
           } else {
-            banner.textContent = `This code doesn't match the one from the Granted CLI: ${data}. Try closing the browser tab and running the last Granted CLI command again.`;
+            banner.textContent = `This code doesn't match any valid codes from the Granted CLI: ${validCodes.join(", ")}. Try closing the browser tab and running the last Granted CLI command again.`;
             banner.style.backgroundColor = "red";
 
             const btn = document.getElementById("cli_verification_btn");

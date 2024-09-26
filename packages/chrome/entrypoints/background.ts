@@ -2,8 +2,34 @@ import { onMessage } from "./utils/messaging";
 
 let userCodes: Record<number, string> = {};
 
-export default defineBackground(() => {
+interface UserCodes {
+  codes: UserCode[] | null;
+}
+
+interface UserCode {
+  code: string;
+  expiresAt: string;
+}
+
+export default defineBackground(async () => {
   console.log("registering background script", { id: browser.runtime.id });
+
+  onMessage("getValidUserCodes", async () => {
+    const result: UserCodes = await browser.runtime.sendNativeMessage(
+      "io.commonfate.granted",
+      {
+        type: "get_valid_user_codes",
+      },
+    );
+
+    console.log("get_valid_user_codes response: " + JSON.stringify(result));
+
+    if (result.codes == null) {
+      return [];
+    }
+
+    return result.codes.map((c) => c.code);
+  });
 
   onMessage("setUserCode", (message) => {
     console.log("setUserCode called");

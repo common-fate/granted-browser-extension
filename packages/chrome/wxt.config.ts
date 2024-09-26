@@ -6,5 +6,6 @@ export default defineConfig({
   manifest: {
     name: "Granted",
     commands: import.meta.env.MODE === "production" ? {} : undefined,
+    permissions: ["nativeMessaging"],
   },
 });

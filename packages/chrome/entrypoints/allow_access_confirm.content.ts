@@ -7,7 +7,8 @@ export default defineContentScript({
 
     const start = Date.now();
     const checkInterval = setInterval(() => {
-      if (document.body.textContent?.includes("Allow access to your data?")) {
+      // Not the title: with scopes it reads "Allow Granted CLI to access your data?"
+      if (document.querySelector('[data-testid="allow-access-button"]')) {
         clearInterval(checkInterval);
         void automateConfirmAccess();
       } else if (Date.now() - start > 20000) {

@@ -1,13 +1,16 @@
 import { sendMessage } from "./utils/messaging";
 
 export default defineContentScript({
-  matches: ["https://*.awsapps.com/start/*"],
+  matches: ["https://*.awsapps.com/start/*", "https://*.signin.aws/platform/*"],
   async main() {
     console.log("Granted: running allow_access_confirm...");
 
     const start = Date.now();
     const checkInterval = setInterval(() => {
-      if (document.body.textContent?.includes("Allow access to your data?")) {
+      if (
+        document.body.textContent?.includes("Allow access to your data?") ||
+        document.body.textContent?.includes("Allow Granted CLI to access your data?")
+      ) {
         clearInterval(checkInterval);
         void automateConfirmAccess();
       } else if (Date.now() - start > 20000) {
@@ -17,7 +20,10 @@ export default defineContentScript({
     }, 200);
 
     const checkIntervalAuthzRequested = setInterval(() => {
-      if (document.body.textContent?.includes("Authorization requested")) {
+      if (
+        document.body.textContent?.includes("Authorization requested") ||
+        document.querySelector(".device-verification-user-code")
+      ) {
         clearInterval(checkIntervalAuthzRequested);
         void confirmUserCode();
       } else if (Date.now() - start > 20000) {
@@ -51,9 +57,9 @@ async function automateConfirmAccess() {
   if (userCodeIsSet) {
     let attempts = 0;
     const intervalId = setInterval(() => {
-      const allowAccessButton = document.querySelector(
-        '[data-testid="allow-access-button"]',
-      ) as HTMLElement;
+      const allowAccessButton =
+        document.querySelector<HTMLElement>('[data-testid="allow-access-button"] button') ??
+        document.querySelector<HTMLElement>('[data-testid="allow-access-button"]');
       if (allowAccessButton) {
         console.log("Granted: found allow access button", allowAccessButton);
         allowAccessButton.click();
@@ -62,7 +68,8 @@ async function automateConfirmAccess() {
         const maxCloseAttempts = 10;
         const closeMessageCheckInterval = setInterval(() => {
           if (
-            document.body.textContent?.includes("You can close this window.")
+            document.body.textContent?.includes("You can close this window.") ||
+            document.body.textContent?.includes("You can now close this tab.")
           ) {
             clearInterval(closeMessageCheckInterval);
             sendMessage("closeTab", undefined);
@@ -98,7 +105,8 @@ async function confirmUserCode() {
     "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
   document.body.prepend(banner);
 
-  const userCodeElement = document.getElementById("user-code");
+  const userCodeElement = document.querySelector("#user-code, .device-verification-user-code");
+  const buttonSelector = '#cli_verification_btn, [data-testid="query-param-user-code"] button[type="submit"]';
   if (userCodeElement) {
     const userCode = userCodeElement.textContent;
     console.log("Granted: got user code: " + userCode);
@@ -110,12 +118,12 @@ async function confirmUserCode() {
 
         if (validCodes.includes(userCode)) {
           await sendMessage("setUserCode", userCode);
-          document.getElementById("cli_verification_btn")?.click();
+          document.querySelector<HTMLElement>(buttonSelector)?.click();
         } else {
           banner.textContent = `This code doesn't match any valid codes from the Granted CLI: ${validCodes.join(", ")}. Try closing the browser tab and running the last Granted CLI command again.`;
           banner.style.backgroundColor = "red";
 
-          const btn = document.getElementById("cli_verification_btn");
+          const btn = document.querySelector<HTMLElement>(buttonSelector);
 
           if (btn != null) {
             console.log("disabling button");
@@ -131,7 +139,7 @@ async function confirmUserCode() {
             "Couldn't confirm the code with the Granted CLI.  Try closing the browser tab and running the last Granted CLI command again.";
           banner.style.backgroundColor = "red";
 
-          const btn = document.getElementById("cli_verification_btn");
+          const btn = document.querySelector<HTMLElement>(buttonSelector);
 
           if (btn != null) {
             console.log("Granted: disabling button");

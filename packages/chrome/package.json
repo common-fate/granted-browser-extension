@@ -5,6 +5,7 @@
   "version": "0.2.3",
   "type": "module",
   "scripts": {
+    "test": "node --test tests/*.test.cjs",
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
     "build": "wxt build",

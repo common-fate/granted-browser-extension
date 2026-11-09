@@ -2,7 +2,7 @@
   "name": "granted-chrome-browser-extension",
   "description": "Automate the AWS IAM Identity Center sign-in process.",
   "private": true,
-  "version": "0.2.3",
+  "version": "0.2.4",
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.cjs",
